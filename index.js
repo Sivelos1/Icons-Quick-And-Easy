@@ -1,59 +1,10 @@
 const fs = require('fs');
 const inquirer = require('inquirer');
+const { RenderableObject, RenderableText, Square, Circle, Triangle } = require('./lib/shapes');
 
 const iconSize = {
     x: 300,
     y: 200
-}
-
-class RenderableObject { //Parent object, contains a Render function that does nothing on its own but is meant to be overriden by its children. Contains base values for child objects
-    constructor(color){
-        this.color = color
-    }
-}
-
-RenderableObject.prototype.render = function(){
-    console.log("rendering");
-}
-
-//=========================================================//
-
-class RenderableText extends RenderableObject{ //Renders text
-    constructor(text, color){
-        super(color);
-        this.text = text;
-    }
-}
-
-RenderableText.prototype.render = function(){
-    return "<text x=\"20\" y=\"60\" font-size=\"40\" fill = \""+this.color+"\">"+this.text+"</text>"
-}
-
-//=========================================================//
-
-class RenderableShape extends RenderableObject{ //Renders shapes
-    constructor(shape, color){
-        super(color);
-        this.shape = shape;
-    }
-}
-
-RenderableShape.prototype.render = function(){
-    var extra = "";
-    switch(this.shape){
-        case "triangle":
-            extra = "polygon points = \"50,10 0,90 100,90\"";
-            break;
-        case "rectangle":
-            extra = "rect width = \"80\" height = \"80\" x = \"10\" y = \"10\"";
-            break;
-        case "circle":
-        default:
-            extra = "circle cx = \"50\" cy = \"50\" r = \"40\""
-            break;
-        
-    }
-    return "<"+extra+" fill=\""+this.color+"\"/>";
 }
 
 //=========================================================//
@@ -67,7 +18,7 @@ class Icon extends RenderableObject { //Parent object that contains other Render
 
 }
 
-Icon.prototype.render = function(){
+Icon.prototype.render = function(){ //Renders out the complete icon. Easier to just have it all in an object than in the main function
     var svg = '<svg width=\"'+iconSize.x+'\" height=\"'+iconSize.y+'\" viewBox=\"0 0 100 100\">';
     svg += "\n"+this.shape.render();
     svg += "\n"+this.text.render();
@@ -100,7 +51,7 @@ inquirer
       type: 'list',
       message: 'Choose one of the following shapes for your icon.',
       name: 'shape',
-      choices: ["rectangle", "triangle", "circle"]
+      choices: ["square", "triangle", "circle"]
     },
     {
       type: 'input',
@@ -109,7 +60,23 @@ inquirer
     },
   ])
   .then(function(data){ //take data, make new renderable objects with it, then pass them into an icon object and use that one's render function
-    var shape = new RenderableShape(data.shape, data.shapeColor);
+    var shape = null;
+    switch(data.shape){
+        case "square":
+            shape = new Square(data.shapeColor);
+            break;
+        case "triangle":
+            shape = new Triangle(data.shapeColor);
+            break;
+        case "circle":
+          shape = new Circle(data.shapeColor);
+          break;
+        default:
+            shape = new Circle("gray");
+            break;
+
+    }
+    console.log(shape.color);
     var text = new RenderableText(data.text, data.textColor);
     var i = new Icon(text, shape);
     i.render();
