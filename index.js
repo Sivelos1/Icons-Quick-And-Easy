@@ -6,7 +6,7 @@ const iconSize = {
     y: 200
 }
 
-class RenderableObject {
+class RenderableObject { //Parent object, contains a Render function that does nothing on its own but is meant to be overriden by its children. Contains base values for child objects
     constructor(color){
         this.color = color
     }
@@ -18,7 +18,7 @@ RenderableObject.prototype.render = function(){
 
 //=========================================================//
 
-class RenderableText extends RenderableObject{
+class RenderableText extends RenderableObject{ //Renders text
     constructor(text, color){
         super(color);
         this.text = text;
@@ -26,12 +26,12 @@ class RenderableText extends RenderableObject{
 }
 
 RenderableText.prototype.render = function(){
-    return "<text x = \"50\" y = \"50\">"+this.text+"</text>"
+    return "<text x=\"20\" y=\"60\" font-size=\"40\" fill = \""+this.color+"\">"+this.text+"</text>"
 }
 
 //=========================================================//
 
-class RenderableShape extends RenderableObject{
+class RenderableShape extends RenderableObject{ //Renders shapes
     constructor(shape, color){
         super(color);
         this.shape = shape;
@@ -39,12 +39,26 @@ class RenderableShape extends RenderableObject{
 }
 
 RenderableShape.prototype.render = function(){
-    return "<"+this.shape+" cx=\"50\" cy=\"50\" r=\"40\" fill=\""+this.color+"\"/>";
+    var extra = "";
+    switch(this.shape){
+        case "triangle":
+            extra = "polygon points = \"50,10 0,90 100,90\"";
+            break;
+        case "rectangle":
+            extra = "rect width = \"80\" height = \"80\" x = \"10\" y = \"10\"";
+            break;
+        case "circle":
+        default:
+            extra = "circle cx = \"50\" cy = \"50\" r = \"40\""
+            break;
+        
+    }
+    return "<"+extra+" fill=\""+this.color+"\"/>";
 }
 
 //=========================================================//
 
-class Icon extends RenderableObject {
+class Icon extends RenderableObject { //Parent object that contains other Renderable Objects
     constructor(text, shape){
         super();
         this.text = text;
@@ -55,11 +69,16 @@ class Icon extends RenderableObject {
 
 Icon.prototype.render = function(){
     var svg = '<svg width=\"'+iconSize.x+'\" height=\"'+iconSize.y+'\" viewBox=\"0 0 100 100\">';
-    svg += this.shape.render();
-    svg += this.text.render();
-    svg += '</svg>'
-    fs.writeFile("icon.svg", svg, function(){
-        console.log("Finished writing to icon.svg!");
+    svg += "\n"+this.shape.render();
+    svg += "\n"+this.text.render();
+    svg += '\n</svg>'
+    fs.writeFile("icon.svg", svg, function(err){
+        if(err){
+            console.error(err);
+        }
+        else{
+            console.log("Successfully wrote to icon.svg!")
+        }
     });
 }
 
@@ -81,7 +100,7 @@ inquirer
       type: 'list',
       message: 'Choose one of the following shapes for your icon.',
       name: 'shape',
-      choices: ["square", "triangle", "circle"]
+      choices: ["rectangle", "triangle", "circle"]
     },
     {
       type: 'input',
@@ -89,7 +108,7 @@ inquirer
       name: 'shapeColor',
     },
   ])
-  .then(function(data){
+  .then(function(data){ //take data, make new renderable objects with it, then pass them into an icon object and use that one's render function
     var shape = new RenderableShape(data.shape, data.shapeColor);
     var text = new RenderableText(data.text, data.textColor);
     var i = new Icon(text, shape);
